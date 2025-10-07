@@ -111,6 +111,15 @@
         </div>
 
         <p class="hint">Tip: Host this file (GitHub Pages/Netlify/Vercel) and link to it from your Figma prototype via an <strong>Open link</strong> interaction. Most browsers require HTTPS for camera access. Keyboard: hold <strong>C</strong> or <strong>Space</strong> to compare.</p>
+              <div class="row full">
+          <label>Diagnostics</label>
+          <div class="chip-group">
+            <button class="chip" id="btnDiag">Run diagnostics</button>
+          </div>
+          <pre id="diagOut" style="white-space:pre-wrap;background:#0f0f16;border:1px solid #2a2a3c;border-radius:12px;padding:10px;margin-top:8px;font-size:12px;color:#cfd2ff;max-height:160px;overflow:auto"></pre>
+        </div>
+
+        <p class="hint">Tip: Host this file (GitHub Pages/Netlify/Vercel) and link to it from your Figma prototype via an <strong>Open link</strong> interaction. Most browsers require HTTPS for camera access. Keyboard: hold <strong>C</strong> or <strong>Space</strong> to compare.</p>
       </div>
     </div>
 
@@ -342,6 +351,36 @@
     }
 
     // ---------- events ----------
+    const diagBtn = document.getElementById('btnDiag');
+    const diagOut = document.getElementById('diagOut');
+
+    async function runDiagnostics(){
+      const lines = [];
+      function log(k,v){ lines.push(`${k}: ${v}`); }
+      log('URL', location.href);
+      log('isSecureContext', window.isSecureContext);
+      log('Protocol', location.protocol);
+      try {
+        if (navigator.permissions?.query){
+          const p = await navigator.permissions.query({ name: 'camera' });
+          log('permissions.query(camera)', p.state);
+        } else {
+          log('permissions.query', 'not supported');
+        }
+      } catch(e){ log('permissions.query(camera) error', e?.message || e); }
+      try {
+        const kinds = {};
+        if (navigator.mediaDevices?.enumerateDevices){
+          const devs = await navigator.mediaDevices.enumerateDevices();
+          devs.forEach(d => kinds[d.kind] = (kinds[d.kind]||0)+1);
+          log('devices', JSON.stringify(kinds));
+        } else { log('enumerateDevices', 'not supported'); }
+      } catch(e){ log('enumerateDevices error', e?.message || e); }
+      diagOut.textContent = lines.join('
+');
+    }
+
+    diagBtn?.addEventListener('click', runDiagnostics);
     startBtn.addEventListener('click', startCamera);
     stopBtn.addEventListener('click', stopCamera);
     captureBtn.addEventListener('click', captureSnapshot);
